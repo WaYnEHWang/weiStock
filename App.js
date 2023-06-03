@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unstable-nested-components */
 import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
@@ -16,11 +17,7 @@ const StockStack = createNativeStackNavigator();
 function StockStackScreen() {
   return (
     <StockStack.Navigator>
-      <StockStack.Screen
-        name="StockScreen"
-        component={StockScreen}
-        options={{headerShown: false}}
-      />
+      <StockStack.Screen name="StockScreen" component={StockScreen} />
     </StockStack.Navigator>
   );
 }
@@ -51,11 +48,20 @@ function HomeStackScreen() {
 
 function Tabs() {
   return (
-    <HomeTab.Navigator initialRouteName="StockTab">
+    <HomeTab.Navigator
+      initialRouteName="StockTab"
+      screenOptions={({route}) => ({
+        tabBarIcon: ({focused}) => {
+          if (route.name === 'StockTab') {
+          } else if (route.name === 'HomeTab') {
+          } else if (route.name === 'SettingsTab') {
+          }
+        },
+      })}>
       <HomeTab.Screen
         name="StockTab"
         component={StockStackScreen}
-        options={{tabBarLabel: '即時', headerShown: false}}
+        options={{tabBarLabel: '即時報價', headerShown: false}}
       />
       <HomeTab.Screen
         name="HomeTab"
