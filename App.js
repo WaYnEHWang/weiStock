@@ -25,11 +25,7 @@ function StockStackScreen() {
 function SettingsStackScreen() {
   return (
     <SettingsStack.Navigator>
-      <SettingsStack.Screen
-        name="SettingsScreen"
-        component={SettingsScreen}
-        options={{headerShown: false}}
-      />
+      <SettingsStack.Screen name="SettingsScreen" component={SettingsScreen} />
     </SettingsStack.Navigator>
   );
 }
@@ -71,7 +67,7 @@ function Tabs() {
       <HomeTab.Screen
         name="SettingsTab"
         component={SettingsStackScreen}
-        options={{tabBarLabel: '設定'}}
+        options={{tabBarLabel: '設定', headerShown: false}}
       />
     </HomeTab.Navigator>
   );
