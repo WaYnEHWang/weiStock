@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react/no-unstable-nested-components */
 import {
@@ -9,6 +10,7 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import React, {useEffect, useState, useCallback} from 'react';
 import {weiStyles} from '../../src/style';
@@ -19,14 +21,19 @@ import {useFocusEffect} from '@react-navigation/native';
 export default function StockScreen({navigation}) {
   const [code, setCode] = useState();
   const [searchCode, setSearchCode] = useState();
-  const [pending, setPending] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [showLocalInfo, setShowLocalInfo] = useState(false);
   const [dayAvgAll, setDayAvgAll] = useState([]);
+  const [bwibbuAll, setBwibbuAll] = useState([]);
   const [name, setName] = useState('');
   const [closingPrice, setClosingPrice] = useState('');
   const [searchStock, setSearchStock] = useState({});
   const [localData, setLocalData] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [monthlyAveragePrice, setMonthlyAveragePrice] = useState('');
+  const [PBratio, setPBratio] = useState('-');
+  const [PEratio, setPEratio] = useState('-');
+  const [dividendYield, setDividendYield] = useState('-');
 
   useEffect(() => {
     navigation.setOptions({
@@ -35,6 +42,7 @@ export default function StockScreen({navigation}) {
       headerBackTitleVisible: false,
     });
     getDayAvgAll();
+    getBWIBBUAll();
   }, [navigation]);
 
   useFocusEffect(
@@ -45,10 +53,39 @@ export default function StockScreen({navigation}) {
     }, []),
   );
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    const data = await LocalStorageService.getLocalStorage('@localStocks');
+    if (data.length) {
+      if (dayAvgAll.length) {
+        let newLocalData = localData;
+        newLocalData.map(stockData => {
+          const result = dayAvgAll.filter(
+            dayAvg => dayAvg.Code === stockData.Code,
+          );
+          if (result[0]) {
+            newLocalData.ClosingPrice = result[0].ClosingPrice;
+            newLocalData.MonthlyAveragePrice = result[0].MonthlyAveragePrice;
+          }
+        });
+        setLocalData(newLocalData);
+        await LocalStorageService.setLocalStorage('@localStocks', newLocalData);
+      }
+    }
+    setRefreshing(false);
+  }, []);
+
   async function getDayAvgAll() {
     let result = await StockAPI.getDayAvgAll();
     if (result.success) {
       setDayAvgAll(result.response);
+    }
+  }
+
+  async function getBWIBBUAll() {
+    let result = await StockAPI.getBWIBBUAll();
+    if (result.success) {
+      setBwibbuAll(result.response);
     }
   }
 
@@ -63,33 +100,47 @@ export default function StockScreen({navigation}) {
     if (code) {
       const codeStr = code.toString();
       const result = dayAvgAll.filter(stock => stock.Code === codeStr);
+      if (bwibbuAll.length) {
+        const bwiResult = bwibbuAll.filter(stock => stock.Code === codeStr);
+        if (bwiResult[0]) {
+          setDividendYield(bwiResult[0].DividendYield);
+          setPBratio(bwiResult[0].PBratio);
+          setPEratio(bwiResult[0].PEratio);
+        }
+      }
       if (result[0]) {
         setShowInfo(true);
         setName(result[0].Name);
         setClosingPrice(result[0].ClosingPrice);
+        setMonthlyAveragePrice(result[0].MonthlyAveragePrice);
         setSearchStock(result[0]);
         setSearchCode(code);
       } else {
         Alert.alert('查無股號');
       }
+
     }
   }
 
   const RecordView = () => {
     function stockPress(stock) {
+      if (bwibbuAll.length) {
+        const bwiResult = bwibbuAll.filter(list => list.Code === stock.Code);
+        if (bwiResult[0]) {
+          setDividendYield(bwiResult[0].DividendYield);
+          setPBratio(bwiResult[0].PBratio);
+          setPEratio(bwiResult[0].PEratio);
+        }
+      }
       setShowLocalInfo(true);
       setName(stock.Name);
       setClosingPrice(stock.ClosingPrice);
       setSearchStock(stock);
       setSearchCode(stock.Code);
+      setMonthlyAveragePrice(stock.MonthlyAveragePrice);
     }
     return (
       <View style={styles.recordView}>
-        {/*<View style={styles.recordViewItem}>
-          <Text style={styles.infoViewButtonText}>股號</Text>
-          <Text style={styles.infoViewButtonText}>名稱</Text>
-          <Text style={styles.infoViewButtonText}>收盤價</Text>
-    </View>*/}
         {localData.map((stock, index) => (
           <TouchableOpacity
             key={index}
@@ -97,11 +148,32 @@ export default function StockScreen({navigation}) {
               stockPress(stock);
             }}>
             <View style={styles.recordViewItem}>
-              <Text style={styles.infoViewButtonText}>{stock.Code}</Text>
-              <Text style={styles.infoViewButtonText}>{stock.Name}</Text>
-              <Text style={styles.infoViewButtonText}>
-                {stock.ClosingPrice}
-              </Text>
+              <View style={{flex: 2, paddingLeft: 5}}>
+                <Text style={styles.infoViewButtonTitle}>{stock.Name}</Text>
+                <Text style={styles.infoViewButtonText}>{stock.Code}</Text>
+              </View>
+              <View
+                style={{
+                  flex: 1,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                <Text style={styles.infoViewButtonText}>月均價</Text>
+                <Text style={styles.infoViewButtonText}>
+                  {stock.MonthlyAveragePrice}
+                </Text>
+              </View>
+              <View
+                style={{
+                  flex: 1,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                <Text style={styles.infoViewButtonText}>昨收</Text>
+                <Text style={styles.infoViewButtonText}>
+                  {stock.ClosingPrice}
+                </Text>
+              </View>
             </View>
           </TouchableOpacity>
         ))}
@@ -145,7 +217,7 @@ export default function StockScreen({navigation}) {
           <View style={styles.addView}>
             <TouchableOpacity
               onPress={() => {
-                setShowInfo(false);
+                close();
               }}>
               <Text style={styles.infoViewButtonText}>關閉</Text>
             </TouchableOpacity>
@@ -154,14 +226,40 @@ export default function StockScreen({navigation}) {
         <View style={[weiStyles.line, styles.line]} />
         <View>
           <View style={styles.infoViewBodyView}>
-            <Text style={styles.infoViewButtonText}>收盤價</Text>
+            <Text style={styles.infoViewButtonText}>昨收</Text>
             <Text style={styles.infoViewButtonText}>{closingPrice}</Text>
+          </View>
+          <View style={styles.infoViewBodyView}>
+            <Text style={styles.infoViewButtonText}>月均價</Text>
+            <Text style={styles.infoViewButtonText}>{monthlyAveragePrice}</Text>
+          </View>
+          <View style={styles.infoViewBodyView}>
+            <Text style={styles.infoViewButtonText}>本益比</Text>
+            <Text style={styles.infoViewButtonText}>{PEratio}</Text>
+          </View>
+          <View style={styles.infoViewBodyView}>
+            <Text style={styles.infoViewButtonText}>殖利率</Text>
+            <Text style={styles.infoViewButtonText}>{dividendYield}</Text>
+          </View>
+          <View style={styles.infoViewBodyView}>
+            <Text style={styles.infoViewButtonText}>股價淨值比</Text>
+            <Text style={styles.infoViewButtonText}>{PBratio}</Text>
           </View>
         </View>
       </View>
     );
   };
 
+  function close() {
+    setShowLocalInfo(false);
+    setShowInfo(false);
+    setDividendYield('-');
+    setPBratio('-');
+    setPEratio('-');
+    setName('');
+    setClosingPrice('');
+    setMonthlyAveragePrice('');
+  }
   const LocalStockInfo = () => {
     async function deleteStock() {
       const idx = localData.indexOf(searchStock);
@@ -192,7 +290,7 @@ export default function StockScreen({navigation}) {
           <View style={styles.addView}>
             <TouchableOpacity
               onPress={() => {
-                setShowLocalInfo(false);
+                close();
               }}>
               <Text style={styles.infoViewButtonText}>關閉</Text>
             </TouchableOpacity>
@@ -201,8 +299,24 @@ export default function StockScreen({navigation}) {
         <View style={[weiStyles.line, styles.line]} />
         <View>
           <View style={styles.infoViewBodyView}>
-            <Text style={styles.infoViewButtonText}>收盤價</Text>
+            <Text style={styles.infoViewButtonText}>昨收</Text>
             <Text style={styles.infoViewButtonText}>{closingPrice}</Text>
+          </View>
+          <View style={styles.infoViewBodyView}>
+            <Text style={styles.infoViewButtonText}>月均價</Text>
+            <Text style={styles.infoViewButtonText}>{monthlyAveragePrice}</Text>
+          </View>
+          <View style={styles.infoViewBodyView}>
+            <Text style={styles.infoViewButtonText}>本益比</Text>
+            <Text style={styles.infoViewButtonText}>{PEratio}</Text>
+          </View>
+          <View style={styles.infoViewBodyView}>
+            <Text style={styles.infoViewButtonText}>殖利率</Text>
+            <Text style={styles.infoViewButtonText}>{dividendYield}</Text>
+          </View>
+          <View style={styles.infoViewBodyView}>
+            <Text style={styles.infoViewButtonText}>股價淨值比</Text>
+            <Text style={styles.infoViewButtonText}>{PBratio}</Text>
           </View>
         </View>
       </View>
@@ -235,7 +349,10 @@ export default function StockScreen({navigation}) {
         </TouchableOpacity>
         <View style={[weiStyles.line, styles.line]} />
       </View>
-      <ScrollView>
+      <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
         {!showInfo && !showLocalInfo && <RecordView />}
         {showInfo && (
           <View
@@ -278,7 +395,7 @@ const styles = StyleSheet.create({
   },
   infoView: {
     width: weiStyles.deviceWidth * 0.9,
-    height: weiStyles.deviceWidth * 0.8,
+    height: weiStyles.deviceWidth * 0.7,
     margin: 10,
     borderWidth: 1,
     padding: 10,
@@ -301,6 +418,11 @@ const styles = StyleSheet.create({
   infoViewButtonText: {
     color: 'black',
     fontSize: 16,
+  },
+  infoViewButtonTitle: {
+    color: 'black',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   infoViewTitleView: {
     flexDirection: 'row',
@@ -333,7 +455,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    height: 40,
+    height: 60,
     width: weiStyles.deviceWidth,
     backgroundColor: 'white',
   },
