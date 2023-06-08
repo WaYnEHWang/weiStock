@@ -22,6 +22,10 @@ export default function SettingsScreen({navigation}) {
     await LocalStorageService.setLocalStorage('@localStocks', []);
   }
 
+  async function cleanMyData() {
+    await LocalStorageService.setLocalStorage('@myStocks', []);
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView>
@@ -32,6 +36,15 @@ export default function SettingsScreen({navigation}) {
           <View
             style={[weiStyles.item, weiStyles.itemBottom, weiStyles.itemTop]}>
             <Text style={styles.itemText}>刪除即時報價所有資料</Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            cleanMyData();
+          }}>
+          <View
+            style={[weiStyles.item, weiStyles.itemBottom, weiStyles.itemTop]}>
+            <Text style={styles.itemText}>刪除帳務庫存所有資料</Text>
           </View>
         </TouchableOpacity>
       </ScrollView>

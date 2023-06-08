@@ -41,12 +41,12 @@ export default function StockScreen({navigation}) {
       headerTintColor: '#000',
       headerBackTitleVisible: false,
     });
-    getDayAvgAll();
-    getBWIBBUAll();
   }, [navigation]);
 
   useFocusEffect(
     useCallback(() => {
+      getDayAvgAll();
+      getBWIBBUAll();
       //抓localStorage的資料
       getLocalData();
       return () => {};
@@ -59,15 +59,18 @@ export default function StockScreen({navigation}) {
     if (data.length) {
       if (dayAvgAll.length) {
         let newLocalData = localData;
-        newLocalData.map(stockData => {
+        newLocalData.map((stockData, index) => {
           const result = dayAvgAll.filter(
             dayAvg => dayAvg.Code === stockData.Code,
           );
           if (result[0]) {
-            newLocalData.ClosingPrice = result[0].ClosingPrice;
-            newLocalData.MonthlyAveragePrice = result[0].MonthlyAveragePrice;
+            console.log(result[0]);
+            newLocalData[index].ClosingPrice = result[0].ClosingPrice;
+            newLocalData[index].MonthlyAveragePrice =
+              result[0].MonthlyAveragePrice;
           }
         });
+        console.log(newLocalData);
         setLocalData(newLocalData);
         await LocalStorageService.setLocalStorage('@localStocks', newLocalData);
       }
@@ -118,7 +121,6 @@ export default function StockScreen({navigation}) {
       } else {
         Alert.alert('查無股號');
       }
-
     }
   }
 

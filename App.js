@@ -36,7 +36,7 @@ function HomeStackScreen() {
       <HomeStack.Screen
         name="HomeScreen"
         component={HomeScreen}
-        options={{headerShown: false}}
+        // options={{headerShown: false}}
       />
     </HomeStack.Navigator>
   );
@@ -62,7 +62,7 @@ function Tabs() {
       <HomeTab.Screen
         name="HomeTab"
         component={HomeStackScreen}
-        options={{tabBarLabel: '自選', headerShown: false}}
+        options={{tabBarLabel: '帳務庫存', headerShown: false}}
       />
       <HomeTab.Screen
         name="SettingsTab"
