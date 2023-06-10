@@ -9,3 +9,8 @@ export function hasNum(str) {
     if (result == null) {return false;}
     return true;
 }
+
+export function numberComma(num){
+    let comma=/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g
+    return num.toString().replace(comma, ',')
+}

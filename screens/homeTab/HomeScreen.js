@@ -17,7 +17,7 @@ import {weiStyles} from '../../src/style';
 import * as StockAPI from '../../api/stock.api';
 import {useFocusEffect} from '@react-navigation/native';
 import * as LocalStorageService from '../../services/LocalStorageService';
-import {hasNum} from '../../common/method';
+import {hasNum, numberComma} from '../../common/method';
 
 export default function HomeScreen({navigation}) {
   const [dayAvgAll, setDayAvgAll] = useState([]);
@@ -26,6 +26,15 @@ export default function HomeScreen({navigation}) {
   const [share, setShare] = useState();
   const [price, setPrice] = useState();
   const [refreshing, setRefreshing] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
+  const [stockCode, setStockCode] = useState();
+  const [stockName, setStockName] = useState();
+  const [stockShares, setStockShares] = useState();
+  const [stockPrices, setStockPrices] = useState();
+  const [stockBuyingPrice, setStockBuyingPrice] = useState();
+  const [stockDayAvg, setStockDayAvg] = useState();
+  const [stockNowPrice, setStockNowPrice] = useState();
+  const [stockRate, setStockRate] = useState();
 
   useEffect(() => {
     navigation.setOptions({
@@ -53,7 +62,7 @@ export default function HomeScreen({navigation}) {
 
   async function getLocalData() {
     const data = await LocalStorageService.getLocalStorage('@myStocks');
-    console.log(JSON.stringify(data));
+    console.log('local: ', JSON.stringify(data));
     if (data) {
       setLocalData(data);
     }
@@ -86,7 +95,13 @@ export default function HomeScreen({navigation}) {
           {
             Code: code,
             Name: name,
-            deal: [{shares: Number(share), prices: Number(price)}],
+            deal: [
+              {
+                shares: Number(share),
+                prices: Number(price),
+                timestamp: Date.now(),
+              },
+            ],
           },
         ];
         if (!localData.length) {
@@ -96,7 +111,7 @@ export default function HomeScreen({navigation}) {
         } else {
           // 本地有資料，往後新增
           let newData = await LocalStorageService.getLocalStorage('@myStocks');
-          newData.push(data);
+          newData.push(data[0]);
           await LocalStorageService.setLocalStorage('@myStocks', newData);
           setLocalData(newData);
         }
@@ -106,6 +121,7 @@ export default function HomeScreen({navigation}) {
         newData[localFiltered].deal.push({
           shares: Number(share),
           prices: Number(price),
+          timestamp: Date.now(),
         });
         await LocalStorageService.setLocalStorage('@myStocks', newData);
         setLocalData(newData);
@@ -154,7 +170,13 @@ export default function HomeScreen({navigation}) {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
-        <RecordView />
+        {!showInfo && <RecordView />}
+        {showInfo && (
+          <View
+            style={[styles.infoView, weiStyles.itemBottom, weiStyles.itemTop]}>
+            <StockInfo />
+          </View>
+        )}
       </ScrollView>
     );
   };
@@ -187,7 +209,6 @@ export default function HomeScreen({navigation}) {
       const dayAvgFiltered = dayAvgAll.filter(word => word.Code === stock.Code);
       if (dayAvgFiltered.length === 1) {
         const closingPrice = dayAvgFiltered[0].ClosingPrice;
-        console.log(closingPrice);
         const totalPrice = stock.deal.reduce(
           (accumulator, deal) =>
             accumulator + Number(deal.shares) * Number(deal.prices),
@@ -199,40 +220,137 @@ export default function HomeScreen({navigation}) {
         );
         const priceAvg = totalPrice / totalShare;
         const rate =
-          Math.round(((closingPrice - priceAvg) / priceAvg) * 100) / 100;
+          Math.round(((closingPrice - priceAvg) / priceAvg) * 10000) / 100;
         return rate;
       } else {
         return '-';
       }
     };
+    const priceALL = data => {
+      return data.reduce(
+        (accumulator, deal) =>
+          accumulator + Number(deal.shares) * Number(deal.prices),
+        0,
+      );
+    };
 
+    const yesterdayPrice = code => {
+      const dayAvgFiltered = dayAvgAll.filter(word => word.Code === code);
+      if (dayAvgFiltered.length === 1) {
+        return dayAvgFiltered[0].ClosingPrice;
+      } else {
+        return 0;
+      }
+    };
+
+    function stockPress(stock) {
+      setShowInfo(true);
+      const shareAll = shareALL(stock.deal);
+      const priceAll = priceALL(stock.deal);
+      const buyingPrice = priceAll / shareAll;
+      const nowPrice = yesterdayPrice(stock.Code);
+      setStockCode(stock.Code);
+      setStockName(stock.Name);
+      setStockShares(numberComma(shareAll));
+      setStockPrices(numberComma(priceAll));
+      setStockBuyingPrice(buyingPrice);
+      setStockDayAvg(nowPrice);
+      setStockNowPrice(numberComma(nowPrice * shareAll));
+      setStockRate(rate(stock));
+    }
     return (
       <View style={styles.recordView}>
         <TitleView />
         {localData.map((stock, index) => (
-          <View key={index} style={styles.recordViewItem}>
-            <View style={{flex: 2, paddingLeft: 5}}>
-              <Text style={styles.infoViewButtonTitle}>{stock.Name}</Text>
-              <Text style={styles.infoViewButtonText}>{stock.Code}</Text>
+          <TouchableOpacity
+            key={index}
+            onPress={() => {
+              stockPress(stock);
+            }}>
+            <View style={styles.recordViewItem}>
+              <View style={{flex: 2, paddingLeft: 5}}>
+                <Text style={styles.infoViewButtonTitle}>{stock.Name}</Text>
+                <Text style={styles.infoViewButtonText}>{stock.Code}</Text>
+              </View>
+              <View style={styles.contentView}>
+                <Text style={styles.infoViewButtonText}>
+                  {shareALL(stock.deal)}
+                </Text>
+              </View>
+              <View style={styles.contentView}>
+                <Text
+                  style={
+                    rate(stock) >= 0
+                      ? styles.rateHighColor
+                      : styles.rateLowColor
+                  }>
+                  {rate(stock)} %
+                </Text>
+              </View>
             </View>
-            <View style={styles.contentView}>
-              <Text style={styles.infoViewButtonText}>
-                {shareALL(stock.deal)}
-              </Text>
-            </View>
-            <View style={styles.contentView}>
-              <Text
-                style={
-                  rate(stock) >= 0 ? styles.rateHighColor : styles.rateLowColor
-                }>
-                {rate(stock)} %
-              </Text>
-            </View>
-          </View>
+          </TouchableOpacity>
         ))}
         {!localData.length && (
           <Text style={styles.infoViewButtonText}>尚未新增股號</Text>
         )}
+      </View>
+    );
+  };
+
+  const StockInfo = () => {
+    return (
+      <View style={{alignItems: 'center'}}>
+        <View style={styles.infoViewTitleView}>
+          <View style={styles.nameView}>
+            <Text style={styles.nameViewText}>{stockCode}</Text>
+            <Text style={styles.nameViewText}>{stockName}</Text>
+          </View>
+          <View style={styles.addView}>
+            <TouchableOpacity
+              onPress={() => {
+                setShowInfo(false);
+              }}>
+              <Text style={styles.infoViewButtonText}>關閉</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View style={[weiStyles.line, styles.line]} />
+        <View>
+          <View style={styles.infoViewBodyView}>
+            <Text style={styles.infoViewButtonText}>成本價</Text>
+            <Text style={styles.infoViewButtonText}>{stockBuyingPrice} 元</Text>
+          </View>
+          <View style={styles.infoViewBodyView}>
+            <Text style={styles.infoViewButtonText}>昨收</Text>
+            <Text style={styles.infoViewButtonText}>{stockDayAvg} 元</Text>
+          </View>
+          <View style={styles.infoViewBodyView}>
+            <Text style={styles.infoViewButtonText}>付出成本</Text>
+            <Text style={styles.infoViewButtonText}>{stockPrices} 元</Text>
+          </View>
+          <View style={styles.infoViewBodyView}>
+            <Text style={styles.infoViewButtonText}>現值</Text>
+            <Text
+              style={
+                stockRate >= 0 ? styles.rateHighColor : styles.rateLowColor
+              }>
+              {stockNowPrice} 元
+            </Text>
+          </View>
+          <View style={styles.infoViewBodyView}>
+            <Text style={styles.infoViewButtonText}>總股數</Text>
+            <Text style={styles.infoViewButtonText}>{stockShares} 股</Text>
+          </View>
+          <View style={styles.infoViewBodyView}>
+            <Text style={styles.infoViewButtonText}>報酬率</Text>
+            <Text
+              style={
+                stockRate >= 0 ? styles.rateHighColor : styles.rateLowColor
+              }>
+              {stockRate} %
+            </Text>
+          </View>
+        </View>
       </View>
     );
   };
@@ -343,7 +461,7 @@ const styles = StyleSheet.create({
   },
   infoView: {
     width: weiStyles.deviceWidth * 0.9,
-    height: weiStyles.deviceWidth * 0.7,
+    height: weiStyles.deviceWidth * 0.8,
     margin: 10,
     borderWidth: 1,
     padding: 10,
