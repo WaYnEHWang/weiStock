@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react/no-unstable-nested-components */
 import {
@@ -25,6 +26,7 @@ export default function HomeScreen({navigation}) {
   const [share, setShare] = useState();
   const [price, setPrice] = useState();
   const [refreshing, setRefreshing] = useState(false);
+  const [showedData, setShowedData] = useState([]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -52,8 +54,8 @@ export default function HomeScreen({navigation}) {
 
   async function getLocalData() {
     const data = await LocalStorageService.getLocalStorage('@myStocks');
+    console.log(JSON.stringify(data));
     if (data) {
-      console.log(JSON.stringify(data));
       setLocalData(data);
     }
   }
@@ -64,82 +66,180 @@ export default function HomeScreen({navigation}) {
     setRefreshing(false);
   }, []);
 
-  const TopView = () => {
-    async function buyButtonPress() {
-      if (code && price && share) {
-        if (!hasNum(price) && !hasNum(share)) {
-          Alert.alert('請輸入有效數字');
-          return;
-        }
-        let name = '';
-        const dayAvgFiltered = dayAvgAll.filter(word => word.Code === code);
-        if (dayAvgFiltered.length === 1) {
-          name = dayAvgFiltered[0].Name;
+  async function buyButtonPress() {
+    if (code && price && share) {
+      if (!hasNum(price) && !hasNum(share)) {
+        Alert.alert('請輸入有效數字');
+        return;
+      }
+      let name = '';
+      const dayAvgFiltered = dayAvgAll.filter(word => word.Code === code);
+      if (dayAvgFiltered.length === 1) {
+        name = dayAvgFiltered[0].Name;
+      } else {
+        Alert.alert('查無此股票');
+        return;
+      }
+      const localFiltered = localData.findIndex(word => word.Code === code);
+      if (localFiltered < 0) {
+        // 本地沒有這筆, 創建資料
+        const data = [
+          {
+            Code: code,
+            Name: name,
+            deal: [{shares: Number(share), prices: Number(price)}],
+          },
+        ];
+        if (!localData.length) {
+          // 本地沒任何資料
+          await LocalStorageService.setLocalStorage('@myStocks', data);
+          setLocalData(data);
         } else {
-          Alert.alert('查無此股票');
-          return;
-        }
-        const localFiltered = localData.findIndex(word => word.Code === code);
-        if (localFiltered < 0) {
-          // 本地沒有這筆, 創建資料
-          const data = [
-            {Code: code, Name: name, deal: [{shares: share, prices: price}]},
-          ];
-          if (!localData.length) {
-            // 本地沒任何資料
-            await LocalStorageService.setLocalStorage('@myStocks', data);
-            setLocalData(data);
-          } else {
-            // 本地有資料，往後新增
-            let newData = await LocalStorageService.getLocalStorage(
-              '@myStocks',
-            );
-            newData.push(data);
-            await LocalStorageService.setLocalStorage('@myStocks', newData);
-            setLocalData(newData);
-          }
-        } else {
-          // 本地有這筆, 新增資料
-          let newData = localData;
-          newData[localFiltered].deal.push({shares: share, prices: price});
-          setLocalData(newData);
+          // 本地有資料，往後新增
+          let newData = await LocalStorageService.getLocalStorage('@myStocks');
+          newData.push(data);
           await LocalStorageService.setLocalStorage('@myStocks', newData);
+          setLocalData(newData);
         }
       } else {
-        Alert.alert('請填寫完整');
+        // 本地有這筆, 新增資料
+        let newData = localData;
+        newData[localFiltered].deal.push({
+          shares: Number(share),
+          prices: Number(price),
+        });
+        await LocalStorageService.setLocalStorage('@myStocks', newData);
+        setLocalData(newData);
       }
+    } else {
+      Alert.alert('請填寫完整');
     }
+  }
 
-    async function sellButtonPress() {
-      if (code && share && price) {
-        if (!hasNum(price) && !hasNum(share)) {
-          Alert.alert('請輸入有效數字');
-          return;
-        }
-        let name = '';
-        const dayAvgFiltered = dayAvgAll.filter(word => word.Code === code);
-        if (dayAvgFiltered.length === 1) {
-          name = dayAvgFiltered[0].Name;
-        } else {
-          Alert.alert('查無此股票');
-          return;
-        }
-        const localFiltered = localData.findIndex(word => word.Code === code);
-        if (localFiltered.length < 0) {
-          Alert.alert('庫存裡沒有: ' + name);
-          return;
-        } else {
-          let newData = localData;
-          const newShare = 0 - share;
-          newData[localFiltered].deal.push({shares: newShare, prices: price});
-          setLocalData(newData);
-          await LocalStorageService.setLocalStorage('@myStocks', newData);
-        }
-      } else {
-        Alert.alert('請填寫完整');
+  async function sellButtonPress() {
+    if (code && share && price) {
+      if (!hasNum(price) && !hasNum(share)) {
+        Alert.alert('請輸入有效數字');
+        return;
       }
+      let name = '';
+      const dayAvgFiltered = dayAvgAll.filter(word => word.Code === code);
+      if (dayAvgFiltered.length === 1) {
+        name = dayAvgFiltered[0].Name;
+      } else {
+        Alert.alert('查無此股票');
+        return;
+      }
+      const localFiltered = localData.findIndex(word => word.Code === code);
+      if (localFiltered.length < 0) {
+        Alert.alert('庫存裡沒有: ' + name);
+        return;
+      } else {
+        let newData = localData;
+        const newShare = 0 - Number(share);
+        newData[localFiltered].deal.push({
+          shares: newShare,
+          prices: Number(price),
+        });
+        setLocalData(newData);
+        await LocalStorageService.setLocalStorage('@myStocks', newData);
+      }
+    } else {
+      Alert.alert('請填寫完整');
     }
+  }
+
+  const BottomView = () => {
     return (
+      <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
+        <RecordView />
+      </ScrollView>
+    );
+  };
+
+  const TitleView = () => {
+    return (
+      <View style={styles.recordViewItem}>
+        <View style={{flex: 2, paddingLeft: 5}}>
+          <Text style={styles.infoViewButtonTitle}>股名</Text>
+        </View>
+        <View style={styles.contentView}>
+          <Text style={styles.infoViewButtonTitle}>總股數</Text>
+        </View>
+        <View style={styles.contentView}>
+          <Text style={styles.infoViewButtonTitle}>報酬率</Text>
+        </View>
+      </View>
+    );
+  };
+
+  const RecordView = () => {
+    const shareALL = data => {
+      return data.reduce(
+        (accumulator, deal) => accumulator + Number(deal.shares),
+        0,
+      );
+    };
+
+    const rate = stock => {
+      const dayAvgFiltered = dayAvgAll.filter(word => word.Code === stock.Code);
+      if (dayAvgFiltered.length === 1) {
+        const closingPrice = dayAvgFiltered[0].ClosingPrice;
+        console.log(closingPrice);
+        const totalPrice = stock.deal.reduce(
+          (accumulator, deal) =>
+            accumulator + Number(deal.shares) * Number(deal.prices),
+          0,
+        );
+        const totalShare = stock.deal.reduce(
+          (accumulator, deal) => accumulator + Number(deal.shares),
+          0,
+        );
+        const priceAvg = totalPrice / totalShare;
+        const rate =
+          Math.round(((closingPrice - priceAvg) / priceAvg) * 100) / 100;
+        return rate;
+      } else {
+        return '-';
+      }
+    };
+
+    return (
+      <View style={styles.recordView}>
+        <TitleView />
+        {localData.map((stock, index) => (
+          <View key={index} style={styles.recordViewItem}>
+            <View style={{flex: 2, paddingLeft: 5}}>
+              <Text style={styles.infoViewButtonTitle}>{stock.Name}</Text>
+              <Text style={styles.infoViewButtonText}>{stock.Code}</Text>
+            </View>
+            <View style={styles.contentView}>
+              <Text style={styles.infoViewButtonText}>
+                {shareALL(stock.deal)}
+              </Text>
+            </View>
+            <View style={styles.contentView}>
+              <Text
+                style={
+                  rate(stock) >= 0 ? styles.rateHighColor : styles.rateLowColor
+                }>
+                {rate(stock)} %
+              </Text>
+            </View>
+          </View>
+        ))}
+        {!localData.length && (
+          <Text style={styles.infoViewButtonText}>尚未新增股號</Text>
+        )}
+      </View>
+    );
+  };
+
+  return (
+    <View style={styles.container}>
       <View style={styles.topView}>
         <Text style={styles.topViewTitle}>輸入股號</Text>
         <View style={[styles.input, weiStyles.itemBottom, weiStyles.itemTop]}>
@@ -215,63 +315,6 @@ export default function HomeScreen({navigation}) {
         </View>
         <View style={[weiStyles.line, styles.line]} />
       </View>
-    );
-  };
-
-  const BottomView = () => {
-    return (
-      <ScrollView
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }>
-        <RecordView />
-      </ScrollView>
-    );
-  };
-
-  const RecordView = () => {
-    return (
-      <View style={styles.recordView}>
-        {localData.map((stock, index) => (
-          <View key={index} style={styles.recordViewItem}>
-            <View style={{flex: 2, paddingLeft: 5}}>
-              <Text style={styles.infoViewButtonTitle}>{stock.Name}</Text>
-              <Text style={styles.infoViewButtonText}>{stock.Code}</Text>
-            </View>
-            <View
-              style={{
-                flex: 1,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-              <Text style={styles.infoViewButtonText}>月均價</Text>
-              <Text style={styles.infoViewButtonText}>
-                {stock.MonthlyAveragePrice}
-              </Text>
-            </View>
-            <View
-              style={{
-                flex: 1,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-              <Text style={styles.infoViewButtonText}>昨收</Text>
-              <Text style={styles.infoViewButtonText}>
-                {stock.ClosingPrice}
-              </Text>
-            </View>
-          </View>
-        ))}
-        {!localData.length && (
-          <Text style={styles.infoViewButtonText}>尚未新增股號</Text>
-        )}
-      </View>
-    );
-  };
-
-  return (
-    <View style={styles.container}>
-      <TopView />
       <BottomView />
     </View>
   );
@@ -323,12 +366,12 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   buyButtonColor: {
-    // backgroundColor: '#FF3B3B',
-    backgroundColor: weiStyles.mainColor,
+    backgroundColor: '#FF3B3B',
+    // backgroundColor: weiStyles.mainColor,
   },
   sellButtonColor: {
-    // backgroundColor: '#00B800',
-    backgroundColor: weiStyles.mainColor,
+    backgroundColor: '#00B800',
+    // backgroundColor: weiStyles.mainColor,
   },
   line: {
     margin: 10,
@@ -398,5 +441,18 @@ const styles = StyleSheet.create({
     borderColor: weiStyles.arrowColor,
     backgroundColor: weiStyles.itemColor,
     justifyContent: 'center',
+  },
+  contentView: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rateHighColor: {
+    fontSize: 16,
+    color: '#FF3B3B',
+  },
+  rateLowColor: {
+    fontSize: 16,
+    color: '#00B800',
   },
 });
