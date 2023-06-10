@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable no-shadow */
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react/no-unstable-nested-components */
 import {
@@ -26,7 +26,6 @@ export default function HomeScreen({navigation}) {
   const [share, setShare] = useState();
   const [price, setPrice] = useState();
   const [refreshing, setRefreshing] = useState(false);
-  const [showedData, setShowedData] = useState([]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -62,7 +61,7 @@ export default function HomeScreen({navigation}) {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-
+    getLocalData();
     setRefreshing(false);
   }, []);
 
