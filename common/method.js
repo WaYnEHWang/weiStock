@@ -11,6 +11,6 @@ export function hasNum(str) {
 }
 
 export function numberComma(num){
-    let comma=/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g
-    return num.toString().replace(comma, ',')
+    let comma = /\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g;
+    return num.toString().replace(comma, ',');
 }

@@ -6,6 +6,7 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import StockScreen from './screens/stockTab/StockScreen';
 import SettingsScreen from './screens/settingTab/SettingsScreen';
 import HomeScreen from './screens/homeTab/HomeScreen';
+import WeiStockScreen from './screens/settingTab/WeiStockScreen';
 
 const AppStack = createNativeStackNavigator();
 const HomeTab = createBottomTabNavigator();
@@ -25,6 +26,7 @@ function SettingsStackScreen() {
   return (
     <SettingsStack.Navigator>
       <SettingsStack.Screen name="SettingsScreen" component={SettingsScreen} />
+      <SettingsStack.Screen name="WeiStock" component={WeiStockScreen} />
     </SettingsStack.Navigator>
   );
 }

@@ -5,11 +5,13 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {weiStyles} from '../../src/style';
 import * as LocalStorageService from '../../services/LocalStorageService';
 
 export default function SettingsScreen({navigation}) {
+  const [showButton, setShowButton] = useState(false);
+
   useEffect(() => {
     navigation.setOptions({
       title: '設定',
@@ -29,12 +31,36 @@ export default function SettingsScreen({navigation}) {
   return (
     <View style={styles.container}>
       <ScrollView>
+        {showButton && (
+          <TouchableOpacity
+            onPress={() => {
+              navigation.navigate('WeiStock');
+            }}>
+            <View
+              style={[
+                weiStyles.item,
+                weiStyles.itemBottom,
+                weiStyles.itemTop,
+                styles.itemView,
+              ]}>
+              <Text style={styles.itemText}>會長股專區</Text>
+            </View>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
+          onLongPress={() => {
+            setShowButton(!showButton);
+          }}
           onPress={() => {
             cleanLocalData();
           }}>
           <View
-            style={[weiStyles.item, weiStyles.itemBottom, weiStyles.itemTop]}>
+            style={[
+              weiStyles.item,
+              weiStyles.itemBottom,
+              weiStyles.itemTop,
+              styles.itemView,
+            ]}>
             <Text style={styles.itemText}>刪除即時報價所有資料</Text>
           </View>
         </TouchableOpacity>
@@ -43,7 +69,12 @@ export default function SettingsScreen({navigation}) {
             cleanMyData();
           }}>
           <View
-            style={[weiStyles.item, weiStyles.itemBottom, weiStyles.itemTop]}>
+            style={[
+              weiStyles.item,
+              weiStyles.itemBottom,
+              weiStyles.itemTop,
+              styles.itemView,
+            ]}>
             <Text style={styles.itemText}>刪除帳務庫存所有資料</Text>
           </View>
         </TouchableOpacity>
@@ -60,5 +91,8 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontSize: 18,
+  },
+  itemView: {
+    marginTop: 10,
   },
 });
