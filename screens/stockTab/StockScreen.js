@@ -78,6 +78,7 @@ export default function StockScreen({navigation}) {
     setRefreshing(false);
   }, []);
 
+  // 上市個股日收盤價
   async function getDayAvgAll() {
     let result = await StockAPI.getDayAvgAll();
     if (result.success) {
@@ -85,6 +86,7 @@ export default function StockScreen({navigation}) {
     }
   }
 
+  // 上市個股日本益比、殖利率及股價淨值比
   async function getBWIBBUAll() {
     let result = await StockAPI.getBWIBBUAll();
     if (result.success) {
@@ -213,7 +215,9 @@ export default function StockScreen({navigation}) {
               onPress={() => {
                 addStock();
               }}>
-              <Text style={styles.infoViewButtonText}>新增</Text>
+              <View style={styles.addBtnView}>
+                <Text style={styles.deleteText}>新增</Text>
+              </View>
             </TouchableOpacity>
           </View>
           <View style={styles.addView}>
@@ -221,7 +225,9 @@ export default function StockScreen({navigation}) {
               onPress={() => {
                 close();
               }}>
-              <Text style={styles.infoViewButtonText}>關閉</Text>
+              <View style={styles.cloaeBtnView}>
+                <Text style={styles.deleteText}>關閉</Text>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -262,6 +268,7 @@ export default function StockScreen({navigation}) {
     setClosingPrice('');
     setMonthlyAveragePrice('');
   }
+
   const LocalStockInfo = () => {
     async function deleteStock() {
       const idx = localData.indexOf(searchStock);
@@ -286,7 +293,9 @@ export default function StockScreen({navigation}) {
               onPress={() => {
                 deleteStock();
               }}>
-              <Text style={styles.infoViewButtonText}>刪除</Text>
+              <View style={styles.deleteBtnView}>
+                <Text style={styles.deleteText}>刪除</Text>
+              </View>
             </TouchableOpacity>
           </View>
           <View style={styles.addView}>
@@ -294,7 +303,9 @@ export default function StockScreen({navigation}) {
               onPress={() => {
                 close();
               }}>
-              <Text style={styles.infoViewButtonText}>關閉</Text>
+              <View style={styles.cloaeBtnView}>
+                <Text style={styles.deleteText}>關閉</Text>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -429,6 +440,7 @@ const styles = StyleSheet.create({
   infoViewTitleView: {
     flexDirection: 'row',
     margin: 5,
+    alignItems: 'center',
   },
   recordView: {
     alignItems: 'center',
@@ -460,5 +472,22 @@ const styles = StyleSheet.create({
     height: 60,
     width: weiStyles.deviceWidth,
     backgroundColor: 'white',
+  },
+  deleteBtnView: {
+    backgroundColor: '#FF3B3B',
+    borderRadius: 5,
+  },
+  deleteText: {
+    color: 'white',
+    fontSize: 16,
+    margin: 5,
+  },
+  cloaeBtnView: {
+    backgroundColor: weiStyles.mainColor,
+    borderRadius: 5,
+  },
+  addBtnView: {
+    backgroundColor: '#00B800',
+    borderRadius: 5,
   },
 });

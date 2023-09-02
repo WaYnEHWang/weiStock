@@ -7,7 +7,6 @@ import {
     View,
     StyleSheet,
     StatusBar,
-    TextInput,
     TouchableOpacity,
     RefreshControl,
     ScrollView,
@@ -17,13 +16,11 @@ import {weiStyles} from '../../src/style';
 import * as StockAPI from '../../api/stock.api';
 import {useFocusEffect} from '@react-navigation/native';
 import * as LocalStorageService from '../../services/LocalStorageService';
+import { numberComma } from '../../common/method';
 
 export default function WeiStockScreen({navigation}) {
     const [dayAvgAll, setDayAvgAll] = useState([]);
     const [localData, setLocalData] = useState([]);
-    const [code, setCode] = useState();
-    const [share, setShare] = useState();
-    const [price, setPrice] = useState();
     const [refreshing, setRefreshing] = useState(false);
     const [showInfo, setShowInfo] = useState(false);
     const [stockCode, setStockCode] = useState();
@@ -268,8 +265,7 @@ export default function WeiStockScreen({navigation}) {
         return (
         <View style={styles.container}>
             <TouchableOpacity
-                    onPress={()=> {console.log('');
-                }}>
+                    onPress={()=> {}}>
                     <View
                         style={[
                             weiStyles.item,
