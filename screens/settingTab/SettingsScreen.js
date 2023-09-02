@@ -4,6 +4,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import {weiStyles} from '../../src/style';
@@ -21,12 +22,36 @@ export default function SettingsScreen({navigation}) {
   }, [navigation]);
 
   async function cleanLocalData() {
+    Alert.alert('刪除', '確定要刪除即時報價所有資料？', [
+      {
+        text: '取消',
+        style: 'cancel',
+      },
+      {text: '確定', onPress: () => deleteLocalData()},
+    ]);
+  }
+
+  async function deleteLocalData() {
     await LocalStorageService.setLocalStorage('@localStocks', []);
   }
 
-  async function cleanMyData() {
+  function cleanMyData() {
+    Alert.alert('刪除', '確定要刪除帳務庫存所有資料？', [
+      {
+        text: '取消',
+        style: 'cancel',
+      },
+      {text: '確定', onPress: () => deleteMyData()},
+    ]);
+  }
+
+  async function deleteMyData() {
     await LocalStorageService.setLocalStorage('@myStocks', []);
   }
+
+  const onPress = () => {
+    return null;
+  };
 
   return (
     <View style={styles.container}>
@@ -47,6 +72,29 @@ export default function SettingsScreen({navigation}) {
             </View>
           </TouchableOpacity>
         )}
+
+        <TouchableOpacity onPress={() => onPress()}>
+          <View
+            style={[
+              weiStyles.item,
+              weiStyles.itemBottom,
+              weiStyles.itemTop,
+              styles.itemView,
+            ]}>
+            <Text style={styles.itemText}>交易紀錄</Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => onPress()}>
+          <View
+            style={[
+              weiStyles.item,
+              weiStyles.itemBottom,
+              weiStyles.itemTop,
+              styles.itemView,
+            ]}>
+            <Text style={styles.itemText}>智慧選股</Text>
+          </View>
+        </TouchableOpacity>
         <TouchableOpacity
           onLongPress={() => {
             setShowButton(!showButton);
@@ -61,7 +109,9 @@ export default function SettingsScreen({navigation}) {
               weiStyles.itemTop,
               styles.itemView,
             ]}>
-            <Text style={styles.itemText}>刪除即時報價所有資料</Text>
+            <Text style={[styles.itemText, styles.deleteBtn]}>
+              刪除即時報價所有資料
+            </Text>
           </View>
         </TouchableOpacity>
         <TouchableOpacity
@@ -75,7 +125,9 @@ export default function SettingsScreen({navigation}) {
               weiStyles.itemTop,
               styles.itemView,
             ]}>
-            <Text style={styles.itemText}>刪除帳務庫存所有資料</Text>
+            <Text style={[styles.itemText, styles.deleteBtn]}>
+              刪除帳務庫存所有資料
+            </Text>
           </View>
         </TouchableOpacity>
       </ScrollView>
@@ -94,5 +146,8 @@ const styles = StyleSheet.create({
   },
   itemView: {
     marginTop: 10,
+  },
+  deleteBtn: {
+    color: '#FF3B3B',
   },
 });

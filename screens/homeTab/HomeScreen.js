@@ -212,25 +212,10 @@ export default function HomeScreen({navigation}) {
         const closingPrice = dayAvgFiltered[0].ClosingPrice;
         let totalShare = 0;
         let totalPrice = 0;
-        let shareTemp = 0;
-
-        for (let i = stock.deal.length - 1; i >= 0; i--) {
-          const deal = stock.deal[i];
+        stock.deal.forEach(deal => {
           totalShare += deal.shares;
-
-          if (deal.shares < 0) {
-            // 賣出的 不累積金額 但會記股數
-            shareTemp -= deal.shares;
-          } else {
-            //買入的 會扣除賣出股數 如果有多就累積金額 沒有的話繼續記股數
-            if (deal.shares >= shareTemp) {
-              totalPrice += (deal.shares - shareTemp) * deal.prices;
-              shareTemp = 0;
-            } else {
-              shareTemp = shareTemp - deal.shares;
-            }
-          }
-        }
+          totalPrice += deal.shares * deal.prices;
+        });
 
         const priceAvg = totalPrice / totalShare;
         const shareRate =
