@@ -12,7 +12,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import React, {useEffect, useState, useCallback} from 'react';
+import React, {useState, useCallback} from 'react';
 import {weiStyles} from '../../src/style';
 import * as StockAPI from '../../api/stock.api';
 import {useFocusEffect} from '@react-navigation/native';
@@ -36,21 +36,19 @@ export default function HomeScreen({navigation}) {
   const [stockNowPrice, setStockNowPrice] = useState();
   const [stockRate, setStockRate] = useState();
 
-  useEffect(() => {
-    navigation.setOptions({
-      title: '帳務庫存',
-      headerTintColor: '#000',
-      headerBackTitleVisible: false,
-    });
-  }, [navigation]);
-
   useFocusEffect(
     useCallback(() => {
+      navigation.setOptions({
+        title: '帳務庫存',
+        headerTintColor: '#000',
+        headerBackTitleVisible: false,
+      });
+
       getDayAvgAll();
       //抓localStorage的資料
       getLocalData();
       return () => {};
-    }, []),
+    }, [navigation]),
   );
 
   async function getDayAvgAll() {
@@ -104,6 +102,7 @@ export default function HomeScreen({navigation}) {
             ],
           },
         ];
+
         if (!localData.length) {
           // 本地沒任何資料
           await LocalStorageService.setLocalStorage('@myStocks', data);
@@ -117,7 +116,7 @@ export default function HomeScreen({navigation}) {
         }
       } else {
         // 本地有這筆, 新增資料
-        let newData = localData;
+        const newData = [...localData];
         newData[localFiltered].deal.push({
           shares: Number(share),
           prices: Number(price),
@@ -150,11 +149,12 @@ export default function HomeScreen({navigation}) {
         Alert.alert('庫存裡沒有: ' + name);
         return;
       } else {
-        let newData = localData;
+        const newData = [...localData];
         const newShare = 0 - Number(share);
         newData[localFiltered].deal.push({
           shares: newShare,
           prices: Number(price),
+          timestamp: Date.now(),
         });
         setLocalData(newData);
         await LocalStorageService.setLocalStorage('@myStocks', newData);
@@ -167,6 +167,7 @@ export default function HomeScreen({navigation}) {
   const BottomView = () => {
     return (
       <ScrollView
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
@@ -209,23 +210,38 @@ export default function HomeScreen({navigation}) {
       const dayAvgFiltered = dayAvgAll.filter(word => word.Code === stock.Code);
       if (dayAvgFiltered.length === 1) {
         const closingPrice = dayAvgFiltered[0].ClosingPrice;
-        const totalPrice = stock.deal.reduce(
-          (accumulator, deal) =>
-            accumulator + Number(deal.shares) * Number(deal.prices),
-          0,
-        );
-        const totalShare = stock.deal.reduce(
-          (accumulator, deal) => accumulator + Number(deal.shares),
-          0,
-        );
+        let totalShare = 0;
+        let totalPrice = 0;
+        let shareTemp = 0;
+
+        for (let i = stock.deal.length - 1; i >= 0; i--) {
+          const deal = stock.deal[i];
+          totalShare += deal.shares;
+
+          if (deal.shares < 0) {
+            // 賣出的 不累積金額 但會記股數
+            shareTemp -= deal.shares;
+          } else {
+            //買入的 會扣除賣出股數 如果有多就累積金額 沒有的話繼續記股數
+            if (deal.shares >= shareTemp) {
+              totalPrice += (deal.shares - shareTemp) * deal.prices;
+              shareTemp = 0;
+            } else {
+              shareTemp = shareTemp - deal.shares;
+            }
+          }
+        }
+
         const priceAvg = totalPrice / totalShare;
-        const rate =
+        const shareRate =
           Math.round(((closingPrice - priceAvg) / priceAvg) * 10000) / 100;
-        return rate;
+
+        return shareRate;
       } else {
         return '-';
       }
     };
+
     const priceALL = data => {
       return data.reduce(
         (accumulator, deal) =>
@@ -258,6 +274,16 @@ export default function HomeScreen({navigation}) {
       setStockNowPrice(numberComma(nowPrice * shareAll));
       setStockRate(rate(stock));
     }
+
+    const Rate = ({rateData}) => {
+      return (
+        <Text
+          style={rateData >= 0 ? styles.rateHighColor : styles.rateLowColor}>
+          {rateData} %
+        </Text>
+      );
+    };
+
     return (
       <View style={styles.recordView}>
         <TitleView />
@@ -278,14 +304,7 @@ export default function HomeScreen({navigation}) {
                 </Text>
               </View>
               <View style={styles.contentView}>
-                <Text
-                  style={
-                    rate(stock) >= 0
-                      ? styles.rateHighColor
-                      : styles.rateLowColor
-                  }>
-                  {rate(stock)} %
-                </Text>
+                <Rate rateData={rate(stock)} />
               </View>
             </View>
           </TouchableOpacity>
@@ -310,7 +329,9 @@ export default function HomeScreen({navigation}) {
               onPress={() => {
                 setShowInfo(false);
               }}>
-              <Text style={styles.infoViewButtonText}>關閉</Text>
+              <View style={styles.closeBtnView}>
+                <Text style={styles.closeText}>關閉</Text>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -461,7 +482,7 @@ const styles = StyleSheet.create({
   },
   infoView: {
     width: weiStyles.deviceWidth * 0.9,
-    height: weiStyles.deviceWidth * 0.8,
+    height: weiStyles.deviceHeight * 0.45,
     margin: 10,
     borderWidth: 1,
     padding: 10,
@@ -484,11 +505,9 @@ const styles = StyleSheet.create({
   },
   buyButtonColor: {
     backgroundColor: '#FF3B3B',
-    // backgroundColor: weiStyles.mainColor,
   },
   sellButtonColor: {
     backgroundColor: '#00B800',
-    // backgroundColor: weiStyles.mainColor,
   },
   line: {
     margin: 10,
@@ -571,5 +590,18 @@ const styles = StyleSheet.create({
   rateLowColor: {
     fontSize: 16,
     color: '#00B800',
+  },
+  closeBtnView: {
+    backgroundColor: weiStyles.mainColor,
+    borderRadius: 5,
+  },
+  closeText: {
+    color: 'white',
+    fontSize: 16,
+    margin: 5,
+  },
+  historyTitle: {
+    fontSize: 16,
+    margin: 5,
   },
 });

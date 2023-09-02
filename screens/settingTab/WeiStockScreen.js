@@ -265,16 +265,16 @@ export default function WeiStockScreen({navigation}) {
         return (
         <View style={styles.container}>
             <TouchableOpacity
-                    onPress={()=> {}}>
-                    <View
-                        style={[
-                            weiStyles.item,
-                            weiStyles.itemBottom,
-                            weiStyles.itemTop,
-                            styles.itemView,
-                        ]}>
-                        <Text style={styles.itemText}>會長股專區</Text>
-                    </View>
+                onPress={()=> {}}>
+                <View
+                    style={[
+                        weiStyles.item,
+                        weiStyles.itemBottom,
+                        weiStyles.itemTop,
+                        styles.itemView,
+                    ]}>
+                    <Text style={styles.itemText}>會長股專區</Text>
+                </View>
                 </TouchableOpacity>
             <BottomView />
         </View>

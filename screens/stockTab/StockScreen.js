@@ -225,7 +225,7 @@ export default function StockScreen({navigation}) {
               onPress={() => {
                 close();
               }}>
-              <View style={styles.cloaeBtnView}>
+              <View style={styles.closeBtnView}>
                 <Text style={styles.deleteText}>關閉</Text>
               </View>
             </TouchableOpacity>
@@ -303,7 +303,7 @@ export default function StockScreen({navigation}) {
               onPress={() => {
                 close();
               }}>
-              <View style={styles.cloaeBtnView}>
+              <View style={styles.closeBtnView}>
                 <Text style={styles.deleteText}>關閉</Text>
               </View>
             </TouchableOpacity>
@@ -363,6 +363,7 @@ export default function StockScreen({navigation}) {
         <View style={[weiStyles.line, styles.line]} />
       </View>
       <ScrollView
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
@@ -482,7 +483,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     margin: 5,
   },
-  cloaeBtnView: {
+  closeBtnView: {
     backgroundColor: weiStyles.mainColor,
     borderRadius: 5,
   },
