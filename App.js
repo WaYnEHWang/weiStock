@@ -7,6 +7,7 @@ import StockScreen from './screens/stockTab/StockScreen';
 import SettingsScreen from './screens/settingTab/SettingsScreen';
 import HomeScreen from './screens/homeTab/HomeScreen';
 import WeiStockScreen from './screens/settingTab/WeiStockScreen';
+import RecordScreen from './screens/settingTab/RecordScreen';
 
 const AppStack = createNativeStackNavigator();
 const HomeTab = createBottomTabNavigator();
@@ -27,6 +28,7 @@ function SettingsStackScreen() {
     <SettingsStack.Navigator>
       <SettingsStack.Screen name="SettingsScreen" component={SettingsScreen} />
       <SettingsStack.Screen name="WeiStock" component={WeiStockScreen} />
+      <SettingsStack.Screen name="Record" component={RecordScreen} />
     </SettingsStack.Navigator>
   );
 }

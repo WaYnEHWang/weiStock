@@ -73,7 +73,7 @@ export default function SettingsScreen({navigation}) {
           </TouchableOpacity>
         )}
 
-        <TouchableOpacity onPress={() => onPress()}>
+        <TouchableOpacity onPress={() => navigation.navigate('Record')}>
           <View
             style={[
               weiStyles.item,
