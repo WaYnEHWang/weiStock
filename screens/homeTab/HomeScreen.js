@@ -200,10 +200,11 @@ export default function HomeScreen({navigation}) {
 
   const RecordView = () => {
     const shareALL = data => {
-      return data.reduce(
+      const shares = data.reduce(
         (accumulator, deal) => accumulator + Number(deal.shares),
         0,
       );
+      return numberComma(shares);
     };
 
     const rate = stock => {

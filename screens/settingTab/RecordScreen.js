@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react/no-unstable-nested-components */
 /* eslint-disable semi */
 /* eslint-disable prettier/prettier */
@@ -6,6 +7,7 @@ import React, {useState, useCallback} from 'react';
 import {weiStyles} from '../../src/style';
 import {useFocusEffect} from '@react-navigation/native';
 import * as LocalStorageService from '../../services/LocalStorageService';
+import {numberComma} from '../../common/method';
 
 export default function RecordScreen({navigation}) {
     const [localData, setLocalData] = useState([]);
@@ -57,7 +59,7 @@ export default function RecordScreen({navigation}) {
             data.deal.forEach(element => {
                 shares += element.shares;
             });
-            return shares;
+            return numberComma(shares);
         }
 
         const averagePrice = () => {
@@ -67,7 +69,8 @@ export default function RecordScreen({navigation}) {
                 shares += element.shares;
                 price += element.shares * element.prices;
             });
-            return price / shares;
+            const rate = Math.round((price / shares) * 100) / 100;
+            return rate;
         }
 
         const onPress = () => {
@@ -104,23 +107,23 @@ export default function RecordScreen({navigation}) {
         const InfoTitle = () => {
             return (
                 <View style={styles.modalItem}>
-                    <View style={styles.modalItemData}>
-                        <Text>
+                    <View style={[styles.modalItemData, {flex: 4}]}>
+                        <Text style={styles.itemTitle}>
                             時間
                         </Text>
                     </View>
-                    <View style={styles.modalItemData}>
-                        <Text>
+                    <View style={[styles.modalItemData, {flex: 2}]}>
+                        <Text style={styles.itemTitle}>
                             操作
                         </Text>
                     </View>
-                    <View style={styles.modalItemData}>
-                        <Text>
+                    <View style={[styles.modalItemData, {flex: 3}]}>
+                        <Text style={styles.itemTitle}>
                             股數
                         </Text>
                     </View>
-                    <View style={styles.modalItemData}>
-                        <Text>
+                    <View style={[styles.modalItemData, {flex: 3}]}>
+                        <Text style={styles.itemTitle}>
                             均價
                         </Text>
                     </View>
@@ -134,28 +137,33 @@ export default function RecordScreen({navigation}) {
             }
 
             return (
-                <View style={styles.modalItem}>
-                    <View style={styles.modalItemData}>
-                        <Text>
-                            {toDate()}
-                        </Text>
+                <>
+                    <View style={styles.modalItem}>
+                        <View style={[styles.modalItemData, {flex: 4}]}>
+                            <Text style={styles.itemContent}>
+                                {toDate()}
+                            </Text>
+                        </View>
+                        <View style={[styles.modalItemData, {flex: 2}]}>
+                            <Text style={[styles.itemContent, item.shares >= 0 ? styles.buyingColor : styles.sellingColor]}>
+                                {item.shares >= 0 ? '買入' : '賣出'}
+                            </Text>
+                        </View>
+                        <View style={[styles.modalItemData, {flex: 3}]}>
+                            <Text style={styles.itemContent}>
+                                {numberComma(Math.abs(item.shares))}
+                            </Text>
+                        </View>
+                        <View style={[styles.modalItemData, {flex: 3}]}>
+                            <Text style={styles.itemContent}>
+                                {item.prices}
+                            </Text>
+                        </View>
                     </View>
-                    <View style={styles.modalItemData}>
-                        <Text>
-                            {item.shares >= 0 ? '買入' : '賣出'}
-                        </Text>
+                    <View style={styles.lineView}>
+                        <View style={[styles.itemLine, styles.line]} />
                     </View>
-                    <View style={styles.modalItemData}>
-                        <Text>
-                            {item.shares}
-                        </Text>
-                    </View>
-                    <View style={styles.modalItemData}>
-                        <Text>
-                            {item.prices}
-                        </Text>
-                    </View>
-                </View>
+                </>
             )
         }
         return (
@@ -168,7 +176,7 @@ export default function RecordScreen({navigation}) {
                     <View style={styles.addView}>
                         <TouchableOpacity
                             onPress={() => {
-                            setShow(false);
+                                setShow(false);
                             }}>
                             <View style={styles.closeBtnView}>
                                 <Text style={styles.closeText}>關閉</Text>
@@ -176,7 +184,7 @@ export default function RecordScreen({navigation}) {
                         </TouchableOpacity>
                     </View>
                 </View>
-                <View style={styles.scrollView}>
+                <View style={styles.lineView}>
                     <View style={[weiStyles.line, styles.line]} />
                 </View>
                 <ScrollView>
@@ -275,13 +283,36 @@ const styles = StyleSheet.create({
     scrollView: {
         alignItems: 'center',
     },
+    lineView: {
+        alignItems: 'center',
+    },
     modalItemData: {
-        flex: 3,
         justifyContent: 'center',
         alignItems: 'center',
     },
     modalItem: {
         flexDirection: 'row',
         flex: 1,
-    }
+        marginVertical: 3,
+    },
+    itemTitle: {
+        fontWeight: 'bold',
+        fontSize: 18,
+    },
+    itemContent: {
+        fontSize: 18,
+    },
+    itemLine: {
+        height: 0,
+        width: '90%',
+        borderWidth: 0.5,
+        borderColor: 'grey',
+        borderStyle: 'solid',
+    },
+    buyingColor: {
+        color: '#FF3B3B',
+    },
+    sellingColor: {
+        color: '#00B800',
+    },
 });
