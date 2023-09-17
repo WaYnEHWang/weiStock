@@ -200,8 +200,10 @@ export default function RecordScreen({navigation}) {
         <View style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollView}>
                 <TitleView/>
+                {localData.length === 0 && <Text style={styles.infoViewButtonText}>尚未新增股號</Text>}
                 {!show && localData.map((record, index) => <Records data={record} key={index}/>)}
                 {show && <Modal/>}
+
             </ScrollView>
         </View>
     );

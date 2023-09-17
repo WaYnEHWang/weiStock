@@ -13,3 +13,11 @@ export async function getBWIBBUAll() {
     const result = await baseAPI.get(baseUrl + bwibbu_all, '');
     return result;
 }
+
+export async function getStocks() {
+    const result = await baseAPI.get('https://vrap767c2j.execute-api.ap-northeast-1.amazonaws.com/v1/stocks', '');
+    if (result.success) {
+        return result.response.data;
+    }
+    return null;
+}
