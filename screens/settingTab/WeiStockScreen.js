@@ -21,6 +21,8 @@ import { numberComma } from '../../common/method';
 export default function WeiStockScreen({navigation}) {
     const [stocks, setStocks] = useState([]);
     const [localData, setLocalData] = useState([]);
+    const [show, setShow] = useState(false);
+    const [modalData, setModalData] = useState();
 
     useEffect(() => {
         navigation.setOptions({
@@ -43,6 +45,7 @@ export default function WeiStockScreen({navigation}) {
         let result = await StockAPI.getStocks();
         if (result) {
             // console.log(JSON.stringify(result));
+            result.sort((a, b) => Number(b.rate.slice(0, -1)) - Number(a.rate.slice(0, -1)));
             setStocks(result);
         }
     }
@@ -66,7 +69,7 @@ export default function WeiStockScreen({navigation}) {
                         <Text style={styles.infoViewButtonTitle}>總股數</Text>
                     </View>
                     <View style={styles.contentView}>
-                        <Text style={styles.infoViewButtonTitle}>成本均價</Text>
+                        <Text style={styles.infoViewButtonTitle}>成本價</Text>
                     </View>
                     <View style={styles.contentView}>
                         <Text style={styles.infoViewButtonTitle}>現價</Text>
@@ -80,10 +83,134 @@ export default function WeiStockScreen({navigation}) {
         );
     };
 
+    const Modal = () => {
+        const InfoTitle = () => {
+            return (
+                <View style={styles.modalItem}>
+                    <View style={[styles.modalItemData, {flex: 4}]}>
+                        <Text style={styles.itemTitle}>
+                            時間
+                        </Text>
+                    </View>
+                    <View style={[styles.modalItemData, {flex: 2}]}>
+                        <Text style={styles.itemTitle}>
+                            操作
+                        </Text>
+                    </View>
+                    <View style={[styles.modalItemData, {flex: 3}]}>
+                        <Text style={styles.itemTitle}>
+                            股數
+                        </Text>
+                    </View>
+                    <View style={[styles.modalItemData, {flex: 3}]}>
+                        <Text style={styles.itemTitle}>
+                            均價
+                        </Text>
+                    </View>
+                </View>
+            );
+        };
+        return (
+            <View style={styles.modalView}>
+                <View style={styles.modalTitleView}>
+                    <View style={styles.nameView}>
+                        <Text style={styles.nameViewText}>{modalData.name}</Text>
+                        <Text style={styles.nameViewText}>{modalData.id}</Text>
+                        <Text style={styles.nameViewText}>{modalData.sellPrices}</Text>
+                    </View>
+                    <View style={styles.addView}>
+                        <TouchableOpacity
+                            onPress={() => {
+                                setShow(false);
+                            }}>
+                            <View style={styles.closeBtnView}>
+                                <Text style={styles.closeText}>關閉</Text>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+                <View style={styles.lineView}>
+                    <View style={[weiStyles.line, styles.line]} />
+                </View>
+                <View>
+                    <View style={{flexDirection: 'row', justifyContent: 'space-around'}}>
+                        <View style={{justifyContent: 'center', alignItems: 'center'}}>
+                            <Text>會長總股數</Text>
+                            <Text style={{fontWeight: 'bold', fontSize: 22}}>{modalData.targetShares}</Text>
+                        </View>
+                        <View style={{justifyContent: 'center', alignItems: 'center'}}>
+                            <Text>會長成本價</Text>
+                            <Text style={{fontWeight: 'bold', fontSize: 22}}>{modalData.targetAvgPrices}</Text>
+                        </View>
+                        <View style={{justifyContent: 'center', alignItems: 'center'}}>
+                            <Text>會長損益</Text>
+                            <Text style={{fontWeight: 'bold', fontSize: 22, color: Number(modalData.targetRate.slice(0, -1)) >= 0 ? '#FF3B3B' : '#00B800'}}>
+                                {modalData.targetRate.length >= 7 ? modalData.targetRate.slice(0, 5) + modalData.targetRate.slice(-1) : modalData.targetRate}
+                            </Text>
+                        </View>
+                    </View>
+                    <View style={{flexDirection: 'row', justifyContent: 'space-around', marginTop: 50}}>
+                        <View style={{justifyContent: 'center', alignItems: 'center'}}>
+                            <Text>我的總股數</Text>
+                            <Text style={{fontWeight: 'bold', fontSize: 22}}>{modalData.myShares}</Text>
+                        </View>
+                        <View style={{justifyContent: 'center', alignItems: 'center'}}>
+                            <Text>我的成本價</Text>
+                            <Text style={{fontWeight: 'bold', fontSize: 22}}>{modalData.myAvgPrices}</Text>
+                        </View>
+                        <View style={{justifyContent: 'center', alignItems: 'center'}}>
+                            <Text>我的損益</Text>
+                            <Text style={{fontWeight: 'bold', fontSize: 22, color: Number(modalData.sellPrices / modalData.myAvgPrices) >= 0 ? '#FF3B3B' : '#00B800'}}>
+                                {modalData.myAvgPrices > 0 ? modalData.sellPrices / modalData.myAvgPrices * 100 + '%' : 0}
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+            </View>
+        );
+    };
+
     const Records = ({data}) => {
 
         const onPress = () => {
-            console.log('');
+            const totalShare = (data) => {
+                let shares = 0;
+                data.forEach(element => {
+                    shares += element.shares;
+                });
+                return numberComma(shares);
+            };
+
+            const averagePrice = (data) => {
+                let shares = 0;
+                let price = 0;
+                data.forEach(element => {
+                    shares += element.shares;
+                    price += element.shares * element.prices;
+                });
+                const avgPrice = Math.round((price / shares) * 100) / 100;
+                return avgPrice;
+            };
+
+            const newModalData = {
+                name: data.stockName,
+                id: data.id,
+                targetShares: data.shares,
+                targetAvgPrices: data.avgPrices,
+                sellPrices: data.sellPrices,
+                targetRate: data.rate,
+            };
+            const result = localData.filter(stock => stock.Code === data.id);
+            if (result.length > 0){
+                newModalData.myShares = totalShare(result[0].deal);
+                newModalData.myAvgPrices = averagePrice(result[0].deal);
+            } else {
+                newModalData.myShares = 0;
+                newModalData.myAvgPrices = 0;
+            }
+
+            setModalData(newModalData);
+            setShow(true);
         };
 
         return (
@@ -106,12 +233,12 @@ export default function WeiStockScreen({navigation}) {
                         </View>
                         <View style={styles.contentView}>
                             <Text style={styles.infoViewButtonText}>
-                                {data.shares}
+                                {data.sellPrices}
                             </Text>
                         </View>
                         <View style={styles.contentView}>
-                            <Text style={styles.infoViewButtonText}>
-                                {data.shares}
+                            <Text style={[styles.infoViewButtonText, Number(data.rate.slice(0, -1)) >= 0 ? styles.buyingColor : styles.sellingColor]}>
+                                {data.rate.length >= 7 ? data.rate.slice(0, 5) + data.rate.slice(-1) : data.rate}
                             </Text>
                         </View>
                     </View>
@@ -126,7 +253,8 @@ export default function WeiStockScreen({navigation}) {
             <View style={styles.container}>
                 <ScrollView contentContainerStyle={styles.scrollView}>
                     <TitleView/>
-                    {stocks.map((stock, index) => <Records data={stock} key={index}/>)}
+                    {!show && stocks.map((stock, index) => <Records data={stock} key={index}/>)}
+                    {show && <Modal/>}
                 </ScrollView>
             </View>
         );
